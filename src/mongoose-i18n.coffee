@@ -1,96 +1,79 @@
-# Solr Queue Worker
+# Mongoose i18n Plugin
 # ==============================================================================
+
+# Mongoose plugin based off of a couple gists I found while trying to support
+# i18n schemas.
+#
+# @author Rolando Henry <elrolito@me.com>
+# @see https://gist.github.com/viczam/3306456d3c63e2c21f1d
+# @see https://gist.github.com/hetsch/3925111
+
+'use strict'
 
 _ = require 'lodash'
 mongoose = require 'mongoose'
-Q = require 'q'
-solr = require 'solr-client'
 
-queues = require '../queues'
+Schema = mongoose.Schema
 
-db = require('../mongo-client')('Solr Queue', queues.solr)
+# The plugin
+#
+# @example using the plugin
+#   mongoose = require 'mongoose'
+#   i18nPlugin = require 'mongoose-i18n'
+#   (... define your schema, e.g. MySchema ...)
+#   MySchema.plugin i18nPlugin, languages: ['en', 'fr'], defaultLanguage: 'en'
+#
+# @param {Object} schema
+# @param {Object} options plugin options
+# @option options {Array} languages array of expected languages
+# @option options {String} [defaultLanguage] the default language
+# @throws {TypeError} if languages is not set or is not an array
+exports = module.exports = (schema, options) ->
+  unless options.languages? or _.isArray(options.languages)
+    throw new TypeError 'Must pass an array of languages.'
 
-options =
-  host: process.env.SOLR_HOST || 'localhost'
-  port: process.env.SOLR_PORT || 8983
-  core: process.env.SOLR_CORE || 'combined'
+  schema.eachPath (path, config) ->
+    # process if i18n: true
+    if config.options.i18n
+      # remove from options
+      delete config.options.i18n
 
-client = solr.createClient options
+      # no longer need this path in schema
+      schema.remove path
 
-client.autoCommit = false
+      # add path to schema for each language
+      _.each options.languages, (lang) ->
+        obj = {}
+        # use same config for each language
+        obj[lang] = config.options
 
-# Queue
-# ----------------------------------------------------------------------
+        if config.options.required
+          # if set, only require the default language
+          if options.defaultLanguage? and lang isnt options.defaultLanguage
+            delete obj[lang]['required']
 
-concurrency = Number(process.env.SOLR_WORKERS) || 12
+        # add the new path to the schema
+        schema.add obj, "#{path}."
 
-queues.solr.process (task, done) ->
-  processSolrTask(task)
-    .then(
-      (response) ->
-        console.log task.id, response
+      if options.defaultLanguage?
+        vPath = "#{path}.i18n"
+        defaultPath = "#{path}.#{options.defaultLanguage}"
 
-        return done()
+        # virtual getter for default language
+        schema.virtual(vPath).get ->
+          return @get defaultPath
 
-      , (error) ->
-        console.error error.message
+        # virtual setter for default language
+        schema.virtual(vPath).set (value) ->
+          return @set defaultPath, value
 
-        task.retries++
+# Add remove method to Schema prototype
+#
+# @param {String} path path to be removed from schema
+Schema::remove = (path) ->
+  keys = path.split '.'
+  tree = @tree
+  tree = tree[keys.shift()] while keys.length > 1
 
-        if task.retries > 5
-          task = error = null
-
-        return done(error, task)
-
-      , (progress) ->
-        console.info progress.message
-    )
-
-, concurrency
-
-processSolrTask = (task) ->
-  deferred = Q.defer()
-
-  Model = mongoose.models[task.model]
-
-  Q.try( ->
-    deferred.notify message: "Finding #{task.id} (#{task.model})"
-
-    query = Model.findById(task.id)
-    if task.model is 'Statute'
-      query = query.populate('explanatoryNote')
-
-    Q.when query.exec(), (doc) ->
-      deferred.reject new Error "#{task.id} does not exist" unless doc?
-
-      if doc?
-        docs = []
-
-        _.map doc.locales, (locale) ->
-          docs.push doc.solrDoc(locale)
-
-        client.add docs, (err, response) ->
-          deferred.reject err if err
-          deferred.resolve response
-  )
-  .catch(
-    (error) ->
-      deferred.reject error
-  )
-
-  return deferred.promise
-
-# Process Startup and Shutdown
-# ----------------------------------------------------------------------
-
-queues.solr.pause()
-
-# Graceful shutdown
-process.on 'SIGINT', ->
-  console.log 'Pausing queues and exiting gracefully...'
-  queues.solr.pause()
-  db.close()
-
-  process.exit(0)
-
-exports.task = processSolrTask
+  delete tree[keys.shift()]
+  delete @paths[path]

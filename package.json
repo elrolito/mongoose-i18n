@@ -2,13 +2,29 @@
   "name": "mongoose-i18n",
   "version": "0.1.0",
   "description": "Mongoose schema plugin for i18n support.",
-  "main": "index.js",
+  "author": {
+    "name": "Rolando Henry",
+    "email": "elrolito@me.com",
+    "url": "https://github.com/elrolito"
+  },
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/elrolito/mongoose-i18n"
+  },
+  "bugs": {
+    "url": "https://github.com/elrolito/mongoose-i18n/issues"
+  },
+  "main": "lib/mongoose-i18n.js",
   "dependencies": {
     "lodash": "^2.4.1",
     "mongoose": "^3.8.8"
   },
   "devDependencies": {
-    "coffee-script": "^1.7.1"
+    "coffee-script": "^1.7.1",
+    "grunt": "^0.4.4",
+    "grunt-contrib-coffee": "^0.10.1",
+    "grunt-contrib-watch": "^0.6.1"
   },
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1"
@@ -17,6 +33,5 @@
     "Mongoose",
     "i18n"
   ],
-  "author": "Rolando Henry <elrolito@me.com>",
-  "license": "MIT"
+  "readmeFilename": "README.md"
 }
