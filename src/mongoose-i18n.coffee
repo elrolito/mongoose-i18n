@@ -39,7 +39,7 @@ exports = module.exports = (schema, options) ->
       delete config.options.i18n
 
       # no longer need this path in schema
-      schema.remove path
+      removePathFromSchema path, schema
 
       # add path to schema for each language
       _.each options.languages, (lang) ->
@@ -70,10 +70,10 @@ exports = module.exports = (schema, options) ->
 # Add remove method to Schema prototype
 #
 # @param {String} path path to be removed from schema
-Schema::remove = (path) ->
+removePathFromSchema = (path, schema) ->
   keys = path.split '.'
-  tree = @tree
+  tree = schema.tree
   tree = tree[keys.shift()] while keys.length > 1
 
   delete tree[keys.shift()]
-  delete @paths[path]
+  delete schema.paths[path]
