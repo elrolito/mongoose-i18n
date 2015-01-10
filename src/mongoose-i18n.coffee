@@ -11,6 +11,7 @@
 'use strict'
 
 _ = require 'lodash'
+debug = require('debug')('mongoose-i18n')
 mongoose = require 'mongoose'
 
 Schema = mongoose.Schema
@@ -29,7 +30,7 @@ Schema = mongoose.Schema
 # @option options {String} [defaultLanguage] the default language
 # @throws {TypeError} if languages is not set or is not an array
 exports = module.exports = (schema, options) ->
-  unless options.languages? or _.isArray(options.languages)
+  unless _.isArray(options?.languages)
     throw new TypeError 'Must pass an array of languages.'
 
   schema.eachPath (path, config) ->
