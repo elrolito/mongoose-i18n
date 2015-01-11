@@ -136,3 +136,77 @@ describe 'Translatable', ->
             .then (translatable) ->
                 expect(translatable).to.have.deep.property('value.en_US').that.equals('Hi')
                 expect(translatable).to.have.deep.property('value2.en_US').that.equals('Farewell')
+
+        describe 'toObjectTranslated(), toJSONTranslated()', ->
+
+            before ->
+                TranslatableSchema = new Schema
+                    index  : Number
+                    value  : { type: String, i18n: true }
+                    value2 : { type: String, i18n: true }
+                    child  :
+                        type : Schema.Types.ObjectId
+                        ref  : 'Translatable_2_0'
+
+                TranslatableSchema.plugin(i18n, { languages: ['en_US', 'es_ES', 'fr_FR'], defaultLanguage: 'en_US' })
+
+                Translatable = mongoose.model('Translatable_2_0', TranslatableSchema)
+
+                Translatable.create
+                    index   : 0
+                    value   : { en_US: 'Morning', es_ES: 'Mañana', fr_FR: 'Matin' }
+                .then (translatable) ->
+                    Translatable.create
+                        index  : 1
+                        value  : { en_US: 'Hello', es_ES: 'Hola', fr_FR: 'Bonjour' }
+                        value2 : { en_US: 'Bye', es_ES: 'Adiós', fr_FR: 'Au revoir' }
+                        child  : translatable._id
+
+            it 'should respond to `toObjectTranslated()`', ->
+                expect(Translatable.findOne(index: 1).exec()).to.eventually.respondTo('toObjectTranslated')
+
+            it 'should respond to `toJSONTranslated()`', ->
+                expect(Translatable.findOne(index: 1).exec()).to.eventually.respondTo('toJSONTranslated')
+
+            it 'should act the same as `toObject()` and `toJSON()` without `translation` passed', ->
+                Translatable.findOne(index: 1).exec()
+                .then (translatable) ->
+                    object = translatable.toObjectTranslated()
+                    expect(object).to.have.deep.property('value.en_US').that.equals('Hello')
+                    expect(object).to.have.deep.property('value.es_ES').that.equals('Hola')
+                    expect(object).to.have.deep.property('value.fr_FR').that.equals('Bonjour')
+                    expect(object).to.have.deep.property('value2.en_US').that.equals('Bye')
+                    expect(object).to.have.deep.property('value2.es_ES').that.equals('Adiós')
+                    expect(object).to.have.deep.property('value2.fr_FR').that.equals('Au revoir')
+
+                    json = translatable.toJSONTranslated()
+                    expect(object).to.have.deep.property('value.en_US').that.equals('Hello')
+                    expect(object).to.have.deep.property('value.es_ES').that.equals('Hola')
+                    expect(object).to.have.deep.property('value.fr_FR').that.equals('Bonjour')
+                    expect(object).to.have.deep.property('value2.en_US').that.equals('Bye')
+                    expect(object).to.have.deep.property('value2.es_ES').that.equals('Adiós')
+                    expect(object).to.have.deep.property('value2.fr_FR').that.equals('Au revoir')
+
+            it 'should accept an option `translation` and translation all the i18n fields', ->
+                Translatable.findOne(index: 1).exec()
+                .then (translatable) ->
+                    object = translatable.toObjectTranslated(translation: 'es_ES')
+                    expect(object).to.have.property('value').that.equals('Hola')
+                    expect(object).to.have.property('value2').that.equals('Adiós')
+
+                    json = translatable.toJSONTranslated(translation: 'fr_FR')
+                    expect(json).to.have.property('value').that.equals('Bonjour')
+                    expect(json).to.have.property('value2').that.equals('Au revoir')
+
+            it 'should work with `populate`', ->
+                Translatable.findOne(index: 1).populate('child').exec()
+                .then (translatable) ->
+                    object = translatable.toObjectTranslated(translation: 'es_ES')
+                    expect(object).to.have.property('value').that.equals('Hola')
+                    expect(object).to.have.property('value2').that.equals('Adiós')
+                    expect(object).to.have.deep.property('child.value').that.equals('Mañana')
+
+                    json = translatable.toJSONTranslated(translation: 'fr_FR')
+                    expect(json).to.have.property('value').that.equals('Bonjour')
+                    expect(json).to.have.property('value2').that.equals('Au revoir')
+                    expect(json.child).to.have.property('value').that.equals('Matin')

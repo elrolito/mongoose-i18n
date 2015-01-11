@@ -14,7 +14,7 @@ _ = require 'lodash'
 debug = require('debug')('mongoose-i18n')
 mongoose = require 'mongoose'
 
-Schema = mongoose.Schema
+Document = mongoose.Document
 
 # The plugin
 #
@@ -37,7 +37,7 @@ exports = module.exports = (schema, options) ->
     # process if i18n: true
     if config.options.i18n
       # remove from options
-      delete config.options.i18n
+    #   delete config.options.i18n
 
       # no longer need this path in schema
       removePathFromSchema path, schema
@@ -67,6 +67,73 @@ exports = module.exports = (schema, options) ->
         # virtual setter for default language
         schema.virtual(vPath).set (value) ->
           return @set defaultPath, value
+
+  schema.methods.toObjectTranslated = (options) ->
+      translation = undefined
+
+      if options?
+          translation = options.translation
+          delete options.translation
+
+          # The native Document.prototype.toObject doesn't like an empty object
+          # `{}` as the parameter
+          if Object.keys(options).length is 0
+              options = undefined
+
+      ret = Document.prototype.toObject.call(this, options)
+
+      if translation?
+        translateObject(ret, schema, translation)
+
+        # translate every populated children objects too
+        for key, populated of this.$__.populated
+          translateObject(ret[key], populated.options.model.schema, translation)
+
+      return ret
+
+  schema.methods.toJSONTranslated = (options) ->
+      translation = undefined
+
+      if options?
+          translation = options.translation
+          delete options.translation
+
+          # The native Document.prototype.toJSON doesn't like an empty object
+          # `{}` as the parameter
+          if Object.keys(options).length is 0
+              options = undefined
+
+      ret = Document.prototype.toJSON.call(this, options)
+
+      if translation?
+        translateObject(ret, schema, translation)
+
+        # translate every populated children objects too
+        for key, populated of this.$__.populated
+          translateObject(ret[key], populated.options.model.schema, translation)
+
+      return ret
+
+# Translate an object's fields that has `i18n` enabled
+#
+# @param {Object} object the object returned from `Document.toObject()` or
+#                        `Document.toJSON()`
+# @param {Mongoose.Schema} schema the schema of `object`
+# @param {String} translation
+translateObject = (object, schema, translation) ->
+  lastTranslatedField = ''
+
+  schema.eachPath (path, config) ->
+    if config.options.i18n and not new RegExp("^#{lastTranslatedField}\\.[^\.]+?$").test(path)
+
+      lastTranslatedField = path.replace(/^(.*?)\.([^\.]+?)$/, '$1')
+
+      keys = path.split '.'
+      tree = object
+
+      tree = tree[keys.shift()] while keys.length > 2
+
+      tree[keys[0]] = tree[keys[0]]?[translation]
 
 # Add remove method to Schema prototype
 #
