@@ -210,3 +210,57 @@ describe 'Translatable', ->
                     expect(json).to.have.property('value').that.equals('Bonjour')
                     expect(json).to.have.property('value2').that.equals('Au revoir')
                     expect(json.child).to.have.property('value').that.equals('Matin')
+
+            describe 'With array of embedded documents', ->
+
+                before ->
+                    TranslatableSchema = new Schema
+                        index    : Number
+                        value    : { type: String, i18n: true }
+                        value2   : { type: String, i18n: true }
+                        children : [
+                            type : Schema.Types.ObjectId
+                            ref  : 'Translatable_2_1'
+                        ]
+
+                    TranslatableSchema.plugin(i18n, { languages: ['en_US', 'es_ES', 'fr_FR'], defaultLanguage: 'en_US' })
+
+                    Translatable = mongoose.model('Translatable_2_1', TranslatableSchema)
+
+                    Q.all [
+                        Translatable.create
+                            index   : 0
+                            value   : { en_US: 'Morning', es_ES: 'Mañana', fr_FR: 'Matin' }
+
+                        Translatable.create
+                            index   : 1
+                            value   : { en_US: 'Good night', es_ES: 'Buenas noches', fr_FR: 'Bonne nuit' }
+                    ]
+                    .spread (translatable1, translatable2) ->
+                        Translatable.create
+                            index    : 2
+                            value    : { en_US: 'Hello', es_ES: 'Hola', fr_FR: 'Bonjour' }
+                            value2   : { en_US: 'Bye', es_ES: 'Adiós', fr_FR: 'Au revoir' }
+                            children : [
+                                translatable1._id
+                                translatable2._id
+                            ]
+
+                it 'should still work with `populate`', ->
+                    Translatable.findOne(index: 2).populate('children').exec()
+                    .then (translatable) ->
+                        object = translatable.toObjectTranslated(translation: 'es_ES')
+                        expect(object).to.have.property('value').that.equals('Hola')
+                        expect(object).to.have.property('value2').that.equals('Adiós')
+                        expect(object).to.have.deep.property('children').that.is.an('Array')
+                                      .and.have.a.lengthOf(2)
+                        expect(object.children[0]).to.have.property('value').that.equals('Mañana')
+                        expect(object.children[1]).to.have.property('value').that.equals('Buenas noches')
+
+                        json = translatable.toJSONTranslated(translation: 'fr_FR')
+                        expect(json).to.have.property('value').that.equals('Bonjour')
+                        expect(json).to.have.property('value2').that.equals('Au revoir')
+                        expect(json).to.have.deep.property('children').that.is.an('Array')
+                                    .and.have.a.lengthOf(2)
+                        expect(json.children[0]).to.have.property('value').that.equals('Matin')
+                        expect(json.children[1]).to.have.property('value').that.equals('Bonne nuit')
