@@ -133,7 +133,10 @@ translateObject = (object, schema, translation) ->
 
       tree = tree[keys.shift()] while keys.length > 2
 
-      tree[keys[0]] = tree[keys[0]]?[translation]
+      if _.isArray(tree)
+        tree[index][keys[0]] = tree[index][keys[0]]?[translation] for child, index in tree
+      else
+        tree[keys[0]] = tree[keys[0]]?[translation]
 
 # Add remove method to Schema prototype
 #
