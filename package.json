@@ -18,7 +18,7 @@
   "main": "lib/mongoose-i18n.js",
   "dependencies": {
     "lodash": "^2.4.1",
-    "mongoose": "^3.8.8"
+    "mongoose": ">=3.8 <3.9"
   },
   "devDependencies": {
     "coffee-script": "^1.7.1",
