@@ -1,6 +1,6 @@
 {
   "name": "mongoose-i18n",
-  "version": "0.2.0",
+  "version": "0.2.1",
   "description": "Mongoose schema plugin for i18n support.",
   "author": {
     "name": "Rolando Henry",
