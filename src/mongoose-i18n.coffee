@@ -58,15 +58,16 @@ exports = module.exports = (schema, options) ->
 
       if options.defaultLanguage?
         vPath = "#{path}.i18n"
-        defaultPath = "#{path}.#{options.defaultLanguage}"
+        defaultPath = () ->
+          return if typeof options.defaultLanguage is 'function' then "#{path}.#{options.defaultLanguage()}" else "#{path}.#{options.defaultLanguage}"
 
         # virtual getter for default language
         schema.virtual(vPath).get ->
-          return @get defaultPath
+          return @get defaultPath()
 
         # virtual setter for default language
         schema.virtual(vPath).set (value) ->
-          return @set defaultPath, value
+          return @set defaultPath(), value
 
   schema.methods.toObjectTranslated = (options) ->
       translation = undefined
