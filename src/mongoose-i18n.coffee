@@ -68,49 +68,55 @@ exports = module.exports = (schema, options) ->
         schema.virtual(vPath).set (value) ->
           return @set defaultPath, value
 
-  schema.methods.toObjectTranslated = (options) ->
-      translation = undefined
+  schema.methods.toObjectTranslated = (opts) ->
+      language = undefined
 
-      if options?
-          translation = options.translation
-          delete options.translation
+      if opts?
+          language = opts.language
+          delete opts.language
 
           # The native Document.prototype.toObject doesn't like an empty object
           # `{}` as the parameter
-          if Object.keys(options).length is 0
-              options = undefined
+          if Object.keys(opts).length is 0
+              opts = undefined
 
-      ret = Document.prototype.toObject.call(this, options)
+      if not language and options.defaultLanguage
+        language = options.defaultLanguage
 
-      if translation?
-        translateObject(ret, schema, translation)
+      ret = Document.prototype.toObject.call(this, opts)
+
+      if language?
+        translateObject(ret, schema, language, options.defaultLanguage)
 
         # translate every populated children objects too
         for key, populated of this.$__.populated
-          translateObject(ret[key], populated.options.model.schema, translation)
+          translateObject(ret[key], populated.options.model.schema, language, options.defaultLanguage)
 
       return ret
 
-  schema.methods.toJSONTranslated = (options) ->
-      translation = undefined
+  schema.methods.toJSONTranslated = (opts) ->
+      language = undefined
 
-      if options?
-          translation = options.translation
-          delete options.translation
+      if opts?
+          language = opts.language
+          delete opts.language
 
           # The native Document.prototype.toJSON doesn't like an empty object
           # `{}` as the parameter
-          if Object.keys(options).length is 0
-              options = undefined
+          if Object.keys(opts).length is 0
+              opts = undefined
 
-      ret = Document.prototype.toJSON.call(this, options)
+      if not language and options.defaultLanguage
+        language = options.defaultLanguage
 
-      if translation?
-        translateObject(ret, schema, translation)
+      ret = Document.prototype.toJSON.call(this, opts)
+
+      if language?
+        translateObject(ret, schema, language)
 
         # translate every populated children objects too
         for key, populated of this.$__.populated
-          translateObject(ret[key], populated.options.model.schema, translation)
+          translateObject(ret[key], populated.options.model.schema, language)
 
       return ret
 
@@ -119,8 +125,9 @@ exports = module.exports = (schema, options) ->
 # @param {Object} object the object returned from `Document.toObject()` or
 #                        `Document.toJSON()`
 # @param {Mongoose.Schema} schema the schema of `object`
-# @param {String} translation
-translateObject = (object, schema, translation) ->
+# @param {String} language
+# @param {String} defaultLanguage
+translateObject = (object, schema, language, defaultLanguage) ->
   lastTranslatedField = ''
 
   schema.eachPath (path, config) ->
@@ -134,9 +141,16 @@ translateObject = (object, schema, translation) ->
       tree = tree[keys.shift()] while keys.length > 2
 
       if _.isArray(tree)
-        tree[index][keys[0]] = tree[index][keys[0]]?[translation] for child, index in tree
+        for child, index in tree
+          if tree[index][keys[0]]?[language]
+            tree[index][keys[0]] = tree[index][keys[0]]?[language]
+          else if defaultLanguage and tree[index][keys[0]]?[defaultLanguage]
+            tree[index][keys[0]] = tree[index][keys[0]]?[defaultLanguage]
       else
-        tree[keys[0]] = tree[keys[0]]?[translation]
+        if tree[keys[0]]?[language]
+          tree[keys[0]] = tree[keys[0]]?[language]
+        else if defaultLanguage and tree[keys[0]]?[defaultLanguage]
+          tree[keys[0]] = tree[keys[0]]?[defaultLanguage]
 
 # Add remove method to Schema prototype
 #
