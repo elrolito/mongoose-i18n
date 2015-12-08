@@ -112,11 +112,11 @@ exports = module.exports = (schema, options) ->
       ret = Document.prototype.toJSON.call(this, opts)
 
       if language?
-        translateObject(ret, schema, language)
+        translateObject(ret, schema, language, options.defaultLanguage)
 
         # translate every populated children objects too
         for key, populated of this.$__.populated
-          translateObject(ret[key], populated.options.model.schema, language)
+          translateObject(ret[key], populated.options.model.schema, language, options.defaultLanguage)
 
       return ret
 
@@ -140,17 +140,27 @@ translateObject = (object, schema, language, defaultLanguage) ->
 
       tree = tree[keys.shift()] while keys.length > 2
 
+      translateScalar = (tree, key, language, defaultLanguage) ->
+        if tree[key]?[language]
+          tree[key] = tree[key]?[language]
+        else if defaultLanguage and tree[key]?[defaultLanguage]
+          tree[key] = tree[key]?[defaultLanguage]
+        else
+          tree[key] = ""
+
       if _.isArray(tree)
         for child, index in tree
-          if tree[index][keys[0]]?[language]
-            tree[index][keys[0]] = tree[index][keys[0]]?[language]
-          else if defaultLanguage and tree[index][keys[0]]?[defaultLanguage]
-            tree[index][keys[0]] = tree[index][keys[0]]?[defaultLanguage]
+          translateScalar tree[index], keys[0], language, defaultLanguage
+          # if tree[index][keys[0]]?[language]
+          #   tree[index][keys[0]] = tree[index][keys[0]]?[language]
+          # else if defaultLanguage and tree[index][keys[0]]?[defaultLanguage]
+          #   tree[index][keys[0]] = tree[index][keys[0]]?[defaultLanguage]
       else
-        if tree[keys[0]]?[language]
-          tree[keys[0]] = tree[keys[0]]?[language]
-        else if defaultLanguage and tree[keys[0]]?[defaultLanguage]
-          tree[keys[0]] = tree[keys[0]]?[defaultLanguage]
+        translateScalar tree, keys[0], language, defaultLanguage
+        # if tree[keys[0]]?[language]
+        #   tree[keys[0]] = tree[keys[0]]?[language]
+        # else if defaultLanguage and tree[keys[0]]?[defaultLanguage]
+        #   tree[keys[0]] = tree[keys[0]]?[defaultLanguage]
 
 # Add remove method to Schema prototype
 #
