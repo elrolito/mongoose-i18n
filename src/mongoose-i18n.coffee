@@ -151,16 +151,8 @@ translateObject = (object, schema, language, defaultLanguage) ->
       if _.isArray(tree)
         for child, index in tree
           translateScalar tree[index], keys[0], language, defaultLanguage
-          # if tree[index][keys[0]]?[language]
-          #   tree[index][keys[0]] = tree[index][keys[0]]?[language]
-          # else if defaultLanguage and tree[index][keys[0]]?[defaultLanguage]
-          #   tree[index][keys[0]] = tree[index][keys[0]]?[defaultLanguage]
       else
         translateScalar tree, keys[0], language, defaultLanguage
-        # if tree[keys[0]]?[language]
-        #   tree[keys[0]] = tree[keys[0]]?[language]
-        # else if defaultLanguage and tree[keys[0]]?[defaultLanguage]
-        #   tree[keys[0]] = tree[keys[0]]?[defaultLanguage]
 
 # Add remove method to Schema prototype
 #
