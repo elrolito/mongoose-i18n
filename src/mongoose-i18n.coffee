@@ -69,50 +69,50 @@ exports = module.exports = (schema, options) ->
           return @set defaultPath, value
 
   schema.methods.toObjectTranslated = (options) ->
-      translation = undefined
+    translation = null
 
-      if options?
-          translation = options.translation
-          delete options.translation
+    if options?
+      translation = options.translation
+      delete options.translation
 
-          # The native Document.prototype.toObject doesn't like an empty object
-          # `{}` as the parameter
-          if Object.keys(options).length is 0
-              options = undefined
+      # The native Document.prototype.toObject doesn't like an empty object
+      # `{}` as the parameter
+      if Object.keys(options).length is 0
+        options = null
 
-      ret = Document.prototype.toObject.call(this, options)
+    ret = Document.prototype.toObject.call(this, options)
 
-      if translation?
-        translateObject(ret, schema, translation)
+    if translation?
+      translateObject(ret, schema, translation)
 
-        # translate every populated children objects too
-        for key, populated of this.$__.populated
-          translateObject(ret[key], populated.options.model.schema, translation)
+      # translate every populated children objects too
+      for key, populated of this.$__.populated
+        translateObject(ret[key], populated.options.model.schema, translation)
 
-      return ret
+    return ret
 
   schema.methods.toJSONTranslated = (options) ->
-      translation = undefined
+    translation = undefined
 
-      if options?
-          translation = options.translation
-          delete options.translation
+    if options?
+      translation = options.translation
+      delete options.translation
 
-          # The native Document.prototype.toJSON doesn't like an empty object
-          # `{}` as the parameter
-          if Object.keys(options).length is 0
-              options = undefined
+      # The native Document.prototype.toJSON doesn't like an empty object
+      # `{}` as the parameter
+      if Object.keys(options).length is 0
+        options = undefined
 
-      ret = Document.prototype.toJSON.call(this, options)
+    ret = Document.prototype.toJSON.call(this, options)
 
-      if translation?
-        translateObject(ret, schema, translation)
+    if translation?
+      translateObject(ret, schema, translation)
 
-        # translate every populated children objects too
-        for key, populated of this.$__.populated
-          translateObject(ret[key], populated.options.model.schema, translation)
+      # translate every populated children objects too
+      for key, populated of this.$__.populated
+        translateObject(ret[key], populated.options.model.schema, translation)
 
-      return ret
+    return ret
 
 # Translate an object's fields that has `i18n` enabled
 #
