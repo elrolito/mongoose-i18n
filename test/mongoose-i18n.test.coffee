@@ -92,6 +92,43 @@ describe 'Translatable', ->
                             expect(err).to.be.undefined
 
                             done()
+            describe 'and a function as default language', ->
+              defaultLanguage = 'en_US'
+
+              before ->
+                defaultLangFn = () ->
+                  return defaultLanguage
+
+                TranslatableSchema = new Schema
+                  index : Number
+                  value : { type: String, i18n: true, required: true }
+
+                TranslatableSchema.plugin(i18n, { languages: ['en_US', 'es_ES', 'fr_FR'], defaultLanguage: defaultLangFn })
+                Translatable = mongoose.model('Translatable_0_2', TranslatableSchema)
+
+              it 'should change virtual property at runtime', ->
+                Translatable.create
+                  index: 0,
+                  value: { es_ES: 'Hola', fr_FR: 'Bonjour', en_US: 'Hello' }
+                .then ->
+                  Translatable.findOne(index: 0).exec()
+                .then (translatable) ->
+                  expect(translatable.value).has.property('i18n').that.equals('Hello');
+                  defaultLanguage = 'fr_FR';
+                  expect(translatable.value).has.property('i18n').that.equals('Bonjour');
+
+              it 'should set the virtual property accordingly to runtime default language', ->
+                Translatable.findOne(index: 0).exec()
+                .then (translatable) ->
+                  translatable.value.i18n = 'Salu';
+                  defaultLanguage = 'en_US';
+                  translatable.value.i18n = 'Hi';
+
+                  Q.ninvoke(translatable, 'save').then -> Translatable.findOne(index: 0).exec()
+
+                .then (translatable) ->
+                    expect(translatable.value).has.property('fr_FR').that.equals('Salu');
+                    expect(translatable.value).has.property('en_US').that.equals('Hi');
 
     describe 'Instance', ->
 
@@ -180,12 +217,12 @@ describe 'Translatable', ->
                     expect(object).to.have.deep.property('value2.fr_FR').that.equals('Au revoir')
 
                     json = translatable.toJSONTranslated()
-                    expect(object).to.have.deep.property('value.en_US').that.equals('Hello')
-                    expect(object).to.have.deep.property('value.es_ES').that.equals('Hola')
-                    expect(object).to.have.deep.property('value.fr_FR').that.equals('Bonjour')
-                    expect(object).to.have.deep.property('value2.en_US').that.equals('Bye')
-                    expect(object).to.have.deep.property('value2.es_ES').that.equals('Adiós')
-                    expect(object).to.have.deep.property('value2.fr_FR').that.equals('Au revoir')
+                    expect(json).to.have.deep.property('value.en_US').that.equals('Hello')
+                    expect(json).to.have.deep.property('value.es_ES').that.equals('Hola')
+                    expect(json).to.have.deep.property('value.fr_FR').that.equals('Bonjour')
+                    expect(json).to.have.deep.property('value2.en_US').that.equals('Bye')
+                    expect(json).to.have.deep.property('value2.es_ES').that.equals('Adiós')
+                    expect(json).to.have.deep.property('value2.fr_FR').that.equals('Au revoir')
 
             it 'should accept an option `translation` and translation all the i18n fields', ->
                 Translatable.findOne(index: 1).exec()
