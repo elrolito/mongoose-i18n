@@ -141,9 +141,9 @@ translateObject = (object, schema, language, defaultLanguage) ->
       tree = tree[keys.shift()] while keys.length > 2
 
       translateScalar = (tree, key, language, defaultLanguage) ->
-        if tree[key]?[language]
+        if tree?[key]?[language]
           tree[key] = tree[key]?[language]
-        else if defaultLanguage and tree[key]?[defaultLanguage]
+        else if defaultLanguage and tree?[key]?[defaultLanguage]
           tree[key] = tree[key]?[defaultLanguage]
         else
           tree[key] = ""
