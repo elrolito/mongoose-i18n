@@ -145,7 +145,7 @@ translateObject = (object, schema, language, defaultLanguage) ->
           tree[key] = tree[key]?[language]
         else if defaultLanguage and tree?[key]?[defaultLanguage]
           tree[key] = tree[key]?[defaultLanguage]
-        else
+        else if tree
           tree[key] = ""
 
       if _.isArray(tree)
