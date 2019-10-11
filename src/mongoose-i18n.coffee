@@ -46,7 +46,7 @@ exports = module.exports = (schema, options) ->
       _.each options.languages, (lang) ->
         obj = {}
         # use same config for each language
-        obj[lang] = config.options
+        obj[lang] = Object.assign {}, config.options
 
         if config.options.required
           # if set, only require the default language
