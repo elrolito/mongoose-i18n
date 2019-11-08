@@ -37,7 +37,7 @@ exports = module.exports = (schema, options) ->
     # process if i18n: true
     if config.options.i18n
       # remove from options
-    #   delete config.options.i18n
+      # delete config.options.i18n
 
       # no longer need this path in schema
       removePathFromSchema path, schema
