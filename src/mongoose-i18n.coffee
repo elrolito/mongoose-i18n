@@ -90,7 +90,7 @@ exports = module.exports = (schema, options) ->
 
         # translate every populated children objects too
         for key, populated of this.$__.populated
-          translateObject(ret[key], populated.options.model.schema, language, options.defaultLanguage)
+          populated.options.model?.schema? and translateObject(ret[key], populated.options.model.schema, language, options.defaultLanguage)
 
       return ret
 
