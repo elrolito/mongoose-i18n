@@ -17,8 +17,8 @@
   },
   "main": "lib/mongoose-i18n.js",
   "dependencies": {
-    "lodash": "^4.17.15",
-    "mongoose": "^5.8.9"
+    "lodash": "^4.17.21",
+    "mongoose": "^5.13.14"
   },
   "devDependencies": {
     "chai": "^4.2.0",
