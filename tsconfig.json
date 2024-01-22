@@ -1,0 +1,18 @@
+{
+  "extends": "@tsconfig/node18/tsconfig.json",
+
+  "compilerOptions": {
+    "baseUrl": ".",
+    "strict": true,
+    "declaration": true,
+    //"module": "ESNext",
+    "module": "CommonJS",
+    "moduleResolution": "Node10",
+    "target": "ES2022",
+    "esModuleInterop": true,
+    "experimentalDecorators": true,
+    "outDir": "./lib/"
+  },
+  "include": ["src/**/*.ts"],
+  "exclude": ["node_modules"]
+}
